@@ -1,0 +1,8 @@
+##
+## Copy this file to android/key.properties and fill in your real signing values.
+## Do NOT commit the resulting key.properties or the keystore itself.
+##
+storePassword=change_me
+keyPassword=change_me
+keyAlias=your-alias
+storeFile=../keystores/your-keystore.jks
