@@ -11,4 +11,8 @@ workflows:
       - name: Fetch iOS Firebase config
         script: |
           mkdir -p ios/Runner
-          cp "$CM_SECURE_FILES/GoogleService-Info.plist" ios/Runner/GoogleService-Info.plist
+          if [ -n "${GOOGLE_SERVICE_INFO_PLIST_B64:-}" ]; then
+            echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 --decode > ios/Runner/GoogleService-Info.plist
+          else
+            cp "$CM_SECURE_FILES/GoogleService-Info.plist" ios/Runner/GoogleService-Info.plist
+          fi
