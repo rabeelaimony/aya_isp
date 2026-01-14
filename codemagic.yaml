@@ -6,6 +6,10 @@ workflows:
     environment:
       groups:
         - firebase
+        - app_store_connect
+      ios_signing:
+        distribution_type: app_store
+        bundle_identifier: com.aya.isp
       flutter: stable
       xcode: latest
       cocoapods: default
@@ -24,3 +28,17 @@ workflows:
             echo "GoogleService-Info.plist decode failed or empty." >&2
             exit 1
           fi
+      - name: Flutter pub get
+        script: flutter pub get
+      - name: Build iOS IPA
+        script: flutter build ipa --release
+    artifacts:
+      - build/ios/ipa/*.ipa
+      - build/ios/archive/*.xcarchive
+    publishing:
+      app_store_connect:
+        api_key:
+          key_id: $APP_STORE_CONNECT_KEY_ID
+          issuer_id: $APP_STORE_CONNECT_ISSUER_ID
+          key: $APP_STORE_CONNECT_PRIVATE_KEY
+        submit_to_testflight: true
