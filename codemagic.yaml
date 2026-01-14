@@ -17,8 +17,9 @@ workflows:
             echo "Missing GOOGLE_SERVICE_INFO_PLIST_B64 env var." >&2
             exit 1
           fi
-          echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 --decode > ios/Runner/GoogleService-Info.plist 2>/dev/null \
-            || echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 -D > ios/Runner/GoogleService-Info.plist
+          sanitized="$(printf "%s" "$GOOGLE_SERVICE_INFO_PLIST_B64" | tr -d '\r\n ')"
+          printf "%s" "$sanitized" | base64 --decode > ios/Runner/GoogleService-Info.plist 2>/dev/null \
+            || printf "%s" "$sanitized" | base64 -D > ios/Runner/GoogleService-Info.plist
           if [ ! -s ios/Runner/GoogleService-Info.plist ]; then
             echo "GoogleService-Info.plist decode failed or empty." >&2
             exit 1
