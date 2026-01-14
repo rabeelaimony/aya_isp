@@ -1,7 +1,9 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
+import 'dart:io';
 import 'dart:ui' as ui;
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../../services/notification_center.dart';
 import '../../services/notification_service.dart';
@@ -24,6 +26,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   bool _isLoading = true;
   String? _error;
   bool _needsNotificationPermission = false;
+  String? _permissionDebugStatus;
   final _service = NotificationService();
   final ScrollController _scrollController = ScrollController();
   static const int _perPage = 10;
@@ -54,6 +57,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
         _isLoading = true;
         _error = null;
         _needsNotificationPermission = false;
+        _permissionDebugStatus = null;
         _hasMore = true;
         _currentPage = 1;
         _lastPage = 1;
@@ -66,9 +70,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       if (!allowed) {
         setState(() {
           _needsNotificationPermission = true;
-          _error = 'نحتاج إذن الإشارات لعرض التنبيهات.';
         });
-        return;
       }
 
       final active = await SessionManager.getActiveAccount();
@@ -389,18 +391,50 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
   }
 
   Future<bool> _ensureNotificationPermission() async {
+    if (Platform.isIOS) {
+      final messaging = FirebaseMessaging.instance;
+      final status = await messaging.getNotificationSettings();
+      if (_isMessagingAuthorized(status)) {
+        _permissionDebugStatus = null;
+        return true;
+      }
+      final requested = await messaging.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+      );
+      if (_isMessagingAuthorized(requested)) {
+        _permissionDebugStatus = null;
+        return true;
+      }
+      _permissionDebugStatus =
+          'iOS status: ${requested.authorizationStatus.toString()}';
+      if (requested.authorizationStatus == AuthorizationStatus.denied) {
+        await openAppSettings();
+      }
+      return false;
+    }
+
     final status = await Permission.notification.status;
     if (status.isGranted || status == PermissionStatus.provisional) {
+      _permissionDebugStatus = null;
       return true;
     }
     final result = await Permission.notification.request();
     if (result.isGranted || result == PermissionStatus.provisional) {
+      _permissionDebugStatus = null;
       return true;
     }
+    _permissionDebugStatus = 'Status: ${result.toString()}';
     if (result.isPermanentlyDenied) {
       await openAppSettings();
     }
     return false;
+  }
+
+  bool _isMessagingAuthorized(NotificationSettings settings) {
+    return settings.authorizationStatus == AuthorizationStatus.authorized ||
+        settings.authorizationStatus == AuthorizationStatus.provisional;
   }
 
   @override
@@ -562,6 +596,56 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                   textDirection: ui.TextDirection.rtl,
                   child: Column(
                     children: [
+                      if (_needsNotificationPermission)
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 16, 16, 6),
+                          child: Container(
+                            padding: const EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primary.withOpacity(0.08),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(
+                                  Icons.notifications_off_outlined,
+                                  color: theme.colorScheme.primary,
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Text(
+                                        'Enable notifications for alerts.',
+                                      ),
+                                      if (_permissionDebugStatus != null)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Text(
+                                            _permissionDebugStatus!,
+                                            style: theme.textTheme.bodySmall
+                                                ?.copyWith(
+                                              color: theme.hintColor,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () async {
+                                    await openAppSettings();
+                                  },
+                                  child: const Text('Settings'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ...List.generate(combined.length, (index) {
                         final notification = combined[index];
                         final isUnread = unread.any(

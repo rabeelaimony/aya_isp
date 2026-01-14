@@ -58,7 +58,9 @@
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Allow access to save images to the photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>Allow access to your location while using the app.</string>
+	<string>نحتاج صلاحية الموقع لقراءة اسم الشبكة وحساب عدد الأجهزة، ولن نستخدم موقعك الفعلي.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>نحتاج صلاحية الموقع لقراءة اسم الشبكة وحساب عدد الأجهزة، ولن نستخدم موقعك الفعلي.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
