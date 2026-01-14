@@ -11,9 +11,13 @@ workflows:
       - name: Fetch iOS Firebase config
         script: |
           mkdir -p ios/Runner
-          if [ -n "${GOOGLE_SERVICE_INFO_PLIST_B64:-}" ]; then
-            echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 --decode > ios/Runner/GoogleService-Info.plist 2>/dev/null \
-              || echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 -D > ios/Runner/GoogleService-Info.plist
-          else
-            cp "$CM_SECURE_FILES/GoogleService-Info.plist" ios/Runner/GoogleService-Info.plist
+          if [ -z "${GOOGLE_SERVICE_INFO_PLIST_B64:-}" ]; then
+            echo "Missing GOOGLE_SERVICE_INFO_PLIST_B64 env var." >&2
+            exit 1
+          fi
+          echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 --decode > ios/Runner/GoogleService-Info.plist 2>/dev/null \
+            || echo "$GOOGLE_SERVICE_INFO_PLIST_B64" | base64 -D > ios/Runner/GoogleService-Info.plist
+          if [ ! -s ios/Runner/GoogleService-Info.plist ]; then
+            echo "GoogleService-Info.plist decode failed or empty." >&2
+            exit 1
           fi
