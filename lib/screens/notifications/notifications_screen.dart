@@ -390,9 +390,13 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
   Future<bool> _ensureNotificationPermission() async {
     final status = await Permission.notification.status;
-    if (status.isGranted) return true;
+    if (status.isGranted || status == PermissionStatus.provisional) {
+      return true;
+    }
     final result = await Permission.notification.request();
-    if (result.isGranted) return true;
+    if (result.isGranted || result == PermissionStatus.provisional) {
+      return true;
+    }
     if (result.isPermanentlyDenied) {
       await openAppSettings();
     }

@@ -305,6 +305,7 @@ class _AccountCardState extends State<AccountCard>
   }
 
   Widget _buildSpeedValue(ThemeData theme) {
+    final speedLabel = _resolveSpeedLabel();
     if (_isReducedSpeedMode()) {
       final reducedColor = Colors.pink.shade400;
       return GestureDetector(
@@ -314,7 +315,7 @@ class _AccountCardState extends State<AccountCard>
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              '2048',
+              speedLabel,
               style: theme.textTheme.bodyLarge?.copyWith(
                 color: reducedColor,
                 fontWeight: FontWeight.w800,
@@ -335,9 +336,22 @@ class _AccountCardState extends State<AccountCard>
     }
 
     return Text(
-      widget.account?.speed ?? '-',
+      speedLabel,
       style: theme.textTheme.bodyLarge?.copyWith(fontWeight: FontWeight.bold),
     );
+  }
+
+  String _resolveSpeedLabel() {
+    final rawSpeed = widget.account?.speed?.toString();
+    if (rawSpeed != null && rawSpeed.isNotEmpty) return rawSpeed;
+
+    final speedList = widget.account?.speedPrice;
+    if (speedList is List && speedList.isNotEmpty) {
+      final fallback = speedList[0]?.speed?.toString();
+      if (fallback != null && fallback.isNotEmpty) return fallback;
+    }
+
+    return '-';
   }
 
   bool _isReducedSpeedMode() {

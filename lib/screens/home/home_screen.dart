@@ -8,6 +8,7 @@ import 'package:aya_isp/services/notification_prefetcher.dart';
 
 import '../../cubits/adsl_traffic_cubit.dart';
 import '../../cubits/userinfo_cubit.dart';
+import 'package:aya_isp/models/adsl_traffic_model.dart';
 import '../../models/userinfo_model.dart';
 import '../../core/ui.dart';
 import 'widgets/account_card.dart';
@@ -259,6 +260,56 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  double? _toDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is num) return value.toDouble();
+    return double.tryParse(value.toString());
+  }
+
+  String _formatTrafficBytes(double bytes) {
+    const units = ['KB', 'MB', 'GB'];
+    double v = bytes / 1024;
+    String unit = 'KB';
+
+    for (int i = 1; i < units.length; i++) {
+      if (v < 1024) {
+        unit = units[i - 1];
+        break;
+      }
+      v = v / 1024;
+      unit = units[i];
+    }
+
+    final int precision = v >= 100
+        ? 0
+        : v >= 10
+        ? 1
+        : 2;
+    return '${v.toStringAsFixed(precision)} $unit';
+  }
+
+  String _formatMonthlyUsage(AdslData? trafficData, Account? account) {
+    if (trafficData == null) return '-';
+
+    final double accountAvailable = _toDouble(account?.availableTraffic) ?? 0.0;
+    final double accountExtra = _toDouble(account?.extraTraffic) ?? 0.0;
+    final double total =
+        trafficData.totalTrafficPackage ?? (accountAvailable + accountExtra);
+    final double available = accountAvailable > 0
+        ? accountAvailable
+        : (trafficData.availableTraffic ?? 0.0);
+
+    final double totalBytes = total * 1024 * 1024 * 1024;
+    final double consumedBytes = (totalBytes - available).clamp(0, totalBytes);
+
+    if (consumedBytes < 1024 * 1024 * 1024) {
+      return _formatTrafficBytes(consumedBytes);
+    }
+
+    final double monthlyGb = trafficData.monthTotalTrafficUsage ?? 0;
+    return '${monthlyGb.toStringAsFixed(2)} GB';
+  }
+
   Widget _settingsChip(ThemeData theme, String label) {
     return Chip(
       label: Text(label),
@@ -465,7 +516,10 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 ),
                                                 const SizedBox(height: 6),
                                                 Text(
-                                                  '${(trafficData!.monthTotalTrafficUsage ?? 0).toStringAsFixed(2)} GB',
+                                                  _formatMonthlyUsage(
+                                                    trafficData,
+                                                    account,
+                                                  ),
                                                   textAlign: TextAlign.right,
                                                   style: Theme.of(context)
                                                       .textTheme
