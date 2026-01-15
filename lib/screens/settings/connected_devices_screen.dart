@@ -1,4 +1,5 @@
 ﻿import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -15,6 +16,7 @@ class ConnectedDevicesScreen extends StatefulWidget {
 }
 
 class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
+  static const String _iosLimitationNote = 'ملاحظة: iOS لا يسمح بعرض الأجهزة المتصلة بالشبكة مباشرةً. يمكن عرضها عبر الراوتر.';
   ConnectedDevicesEstimate? _estimate;
   String? _error;
   bool _loading = false;
@@ -406,6 +408,14 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
       ...ips.where((ip) => ip != deviceIp),
     ];
     if (displayIps.isEmpty) {
+      if (Platform.isIOS) {
+        return const Center(
+          child: Text(
+            _iosLimitationNote,
+            textAlign: TextAlign.center,
+          ),
+        );
+      }
       return const Center(child: Text('لا توجد أجهزة أخرى على الشبكة.'));
     }
 
