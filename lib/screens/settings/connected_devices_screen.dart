@@ -321,6 +321,17 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
                       ],
                     ),
                     const SizedBox(height: 8),
+                    if (Platform.isIOS)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Text(
+                          _iosLimitationNote,
+                          textAlign: TextAlign.right,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Colors.grey.shade700,
+                          ),
+                        ),
+                      ),
                     Expanded(child: _buildList(context, estimate)),
                   ],
                 ),
