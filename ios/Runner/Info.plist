@@ -58,14 +58,16 @@
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Allow access to save images to the photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>نحتاج صلاحية الموقع لقراءة اسم الشبكة وحساب عدد الأجهزة، ولن نستخدم موقعك الفعلي.</string>
+\t<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-	<string>نحتاج صلاحية الموقع لقراءة اسم الشبكة وحساب عدد الأجهزة، ولن نستخدم موقعك الفعلي.</string>
+\t<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
 	</array>
 </dict>
 </plist>
+
+
 
 

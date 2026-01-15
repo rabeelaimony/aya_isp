@@ -281,7 +281,7 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
                                     _buildSearchingAnimation()
                                   else
                                     Text(
-                                      ' جهاز',
+                                      '${_totalWithMe(estimate)} جهاز',
                                       style: Theme.of(context)
                                           .textTheme
                                           .titleMedium
@@ -722,7 +722,7 @@ class _ScanningOverlayState extends State<_ScanningOverlay>
             const SizedBox(height: 6),
             Text(
               widget.ssid.isNotEmpty
-                  ? 'الشبكة: '
+                  ? widget.ssid
                   : 'قد تحتاج لتفعيل إذن الموقع لقراءة اسم الشبكة.',
               style: theme.textTheme.bodyMedium?.copyWith(
                 color: Colors.white.withOpacity(0.9),

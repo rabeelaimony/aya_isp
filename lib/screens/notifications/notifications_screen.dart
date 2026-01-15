@@ -66,6 +66,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
     }
 
     try {
+      final existingItems = NotificationCenter.instance.items.toList();
+      final readOverrides = <int, bool>{};
+      for (final item in existingItems) {
+        final id = item.id;
+        if (id != 0 && item.read) {
+          readOverrides[id] = true;
+        }
+      }
+
       final allowed = await _ensureNotificationPermission();
       if (!allowed) {
         setState(() {
@@ -113,14 +122,12 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                 'user_id': active.userId,
                 'user_name': n.userName,
               },
-              read: n.read,
+              read: n.read || (readOverrides[n.id] ?? false),
             ),
           )
           .toList();
 
-      final existing = append
-          ? NotificationCenter.instance.items.toList()
-          : <ReceivedNotification>[];
+      final existing = append ? existingItems : <ReceivedNotification>[];
 
       final combined = <ReceivedNotification>[]
         ..addAll(existing)
@@ -256,12 +263,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
       return int.tryParse(raw.toString());
     }
 
-    final primary = notification.id;
-    if (primary != 0) return primary;
-
     final candidates = [
-      notification.data['delivery_id'],
       notification.data['notification_id'],
+      notification.data['delivery_id'],
       notification.data['id'],
     ];
 
@@ -272,7 +276,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
 
     final nested = notification.data['data'];
     if (nested is Map) {
-      for (final key in ['delivery_id', 'notification_id', 'id']) {
+      for (final key in ['notification_id', 'delivery_id', 'id']) {
         final parsed = parseId(nested[key]);
         if (parsed != null && parsed != 0) return parsed;
       }

@@ -338,7 +338,7 @@ int? _extractNotificationIdFromData(Map<String, dynamic> data) {
     return int.tryParse(raw.toString());
   }
 
-  final candidates = [data['delivery_id'], data['notification_id'], data['id']];
+  final candidates = [data['notification_id'], data['delivery_id'], data['id']];
 
   for (final raw in candidates) {
     final parsed = parseId(raw);
@@ -347,7 +347,7 @@ int? _extractNotificationIdFromData(Map<String, dynamic> data) {
 
   final nested = data['data'];
   if (nested is Map<String, dynamic>) {
-    for (final key in ['delivery_id', 'notification_id', 'id']) {
+    for (final key in ['notification_id', 'delivery_id', 'id']) {
       final parsed = parseId(nested[key]);
       if (parsed != null && parsed != 0) return parsed;
     }
