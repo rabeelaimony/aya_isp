@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="UTF-8"?>
+﻿﻿﻿<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 	<dict>
@@ -58,9 +58,9 @@
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Allow access to save images to the photo library.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-\t<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
+	<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-\t<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
+	<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>
