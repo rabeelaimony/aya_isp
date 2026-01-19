@@ -16,7 +16,8 @@ class ConnectedDevicesScreen extends StatefulWidget {
 }
 
 class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
-  static const String _iosLimitationNote = 'ملاحظة: iOS لا يسمح بعرض الأجهزة المتصلة بالشبكة مباشرةً. يمكن عرضها عبر الراوتر.';
+  static const String _iosLimitationNote =
+      'ملاحظة: iOS لا يسمح بعرض الأجهزة المتصلة بالشبكة مباشرةً. يمكن عرضها عبر الراوتر.';
   ConnectedDevicesEstimate? _estimate;
   String? _error;
   bool _loading = false;
@@ -327,9 +328,8 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
                         child: Text(
                           _iosLimitationNote,
                           textAlign: TextAlign.right,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Colors.grey.shade700,
-                          ),
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(color: Colors.grey.shade700),
                         ),
                       ),
                     Expanded(child: _buildList(context, estimate)),
@@ -421,10 +421,7 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
     if (displayIps.isEmpty) {
       if (Platform.isIOS) {
         return const Center(
-          child: Text(
-            _iosLimitationNote,
-            textAlign: TextAlign.center,
-          ),
+          child: Text(_iosLimitationNote, textAlign: TextAlign.center),
         );
       }
       return const Center(child: Text('لا توجد أجهزة أخرى على الشبكة.'));
