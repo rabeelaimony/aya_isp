@@ -283,7 +283,12 @@ class _RechargeAccountScreenState extends State<RechargeAccountScreen> {
                                 'تم استلام طلب التجديد وسيتم تنفيذ العملية خلال لحظات. يرجى الانتظار... سيتم تحديث البيانات تلقائياً.',
                           ),
                         );
-                        if (mounted) Navigator.of(context).pop(true);
+                        if (!mounted) return;
+                        // Allow the dialog route to fully pop before popping this screen.
+                        await Future<void>.delayed(
+                          const Duration(milliseconds: 150),
+                        );
+                        if (mounted) Navigator.of(context).maybePop(true);
                       } else if (state is RechargeAdslError) {
                         showAppMessage(
                           context,
@@ -348,3 +353,4 @@ class _RechargeAccountScreenState extends State<RechargeAccountScreen> {
     );
   }
 }
+

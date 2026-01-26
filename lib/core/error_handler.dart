@@ -11,10 +11,12 @@ class ErrorHandler {
     if (error is DioException) {
       AppLogger.e("DioException", error, error.stackTrace);
 
-      // Prefer any meaningful message coming from the server, regardless of type.
-      final serverMessage = _extractServerMessage(error.response?.data);
-      if (serverMessage != null && serverMessage.isNotEmpty) {
-        return _finalizeMessage(serverMessage);
+      // ✅ خذ رسالة السيرفر فقط إذا كانت آمنة (ليست تقنية)
+      final initialServerMessage = _extractServerMessage(error.response?.data);
+      if (initialServerMessage != null &&
+          initialServerMessage.isNotEmpty &&
+          !_isTechnicalMessage(initialServerMessage)) {
+        return _finalizeMessage(initialServerMessage);
       }
 
       switch (error.type) {
@@ -27,22 +29,48 @@ class ErrorHandler {
 
         case DioExceptionType.badResponse:
           final code = error.response?.statusCode;
+
+          // 1) جرّب رسالة السيرفر مرة ثانية (إذا آمنة)
+          final serverMessage = _extractServerMessage(error.response?.data);
+          if (serverMessage != null &&
+              serverMessage.isNotEmpty &&
+              !_isTechnicalMessage(serverMessage)) {
+            return _finalizeMessage(serverMessage);
+          }
+
+          // 2) fallback حسب status code
           switch (code) {
+            case 400:
+              return _finalizeMessage('طلب غير صالح.');
             case 401:
               return _finalizeMessage('غير مصرح. يرجى تسجيل الدخول مرة أخرى.');
             case 403:
               return _finalizeMessage('لا تملك صلاحية الوصول.');
             case 404:
               return _finalizeMessage('الخدمة غير موجودة.');
-            case 502:
-            case 504:
+            case 409:
+              return _finalizeMessage('يوجد تعارض بالبيانات. حاول مرة أخرى.');
+            case 422:
+              return _finalizeMessage('البيانات المرسلة غير صحيحة.');
+            case 429:
+              return _finalizeMessage('عدد طلبات كبير. حاول لاحقاً.');
             case 500:
+            case 502:
             case 503:
+            case 504:
+            case 520:
             case 522:
             case 524:
               return _finalizeMessage('الخادم غير متاح حالياً. حاول لاحقاً.');
             default:
-              return _finalizeMessage('حدث خطأ غير متوقع في الخادم.');
+              // 3) إذا الكود null أو غير معروف
+              if (code == null) {
+                return _finalizeMessage('حدث خطأ في الاتصال بالخادم.');
+              }
+              // إذا ما بدك تعرض الرمز للمستخدم، احذف (رمز $code)
+              return _finalizeMessage(
+                'حدث خطأ غير متوقع في الخادم. (رمز $code)',
+              );
           }
 
         case DioExceptionType.connectionError:
@@ -68,9 +96,7 @@ class ErrorHandler {
     if (data is List<int>) {
       try {
         final decoded = utf8.decode(data, allowMalformed: true).trim();
-        if (decoded.isNotEmpty) {
-          return _extractServerMessage(decoded);
-        }
+        if (decoded.isNotEmpty) return _extractServerMessage(decoded);
       } catch (_) {
         // ignore decode failures
       }
@@ -88,7 +114,7 @@ class ErrorHandler {
       if (errors != null) {
         if (errors is Map) {
           final msgs = <String>[];
-          errors.forEach((k, v) {
+          errors.forEach((_, v) {
             if (v is List && v.isNotEmpty) {
               msgs.add(v.first.toString());
             } else if (v is String && v.trim().isNotEmpty) {
@@ -98,7 +124,7 @@ class ErrorHandler {
             }
           });
           if (msgs.isNotEmpty) {
-            final joined = msgs.join('? ');
+            final joined = msgs.join('، ');
             final cleaned = _sanitizeMessage(joined);
             if (cleaned.isNotEmpty) return cleaned;
           }
@@ -110,7 +136,7 @@ class ErrorHandler {
               .map((e) => e.toString())
               .toList();
           if (msgs.isNotEmpty) {
-            final joined = msgs.join('? ');
+            final joined = msgs.join('، ');
             final cleaned = _sanitizeMessage(joined);
             if (cleaned.isNotEmpty) return cleaned;
           }
@@ -118,8 +144,11 @@ class ErrorHandler {
       }
     } else if (data is String && data.trim().isNotEmpty) {
       final raw = data.trim();
+
       final proxyMessage = _mapProxyMessage(raw);
       if (proxyMessage != null) return proxyMessage;
+
+      // لو رجع JSON كنص
       try {
         final decoded = jsonDecode(raw);
         final decodedMessage = _extractServerMessage(decoded);
@@ -127,18 +156,21 @@ class ErrorHandler {
           return decodedMessage;
         }
       } catch (_) {
-        // Not JSON, fall back to plain text handling.
+        // Not JSON
       }
 
       final trimmed = _sanitizeMessage(raw);
       if (trimmed.isNotEmpty && !_looksLikeHtml(trimmed)) return trimmed;
     }
+
     return null;
   }
 
   static String extractMessage(dynamic data) {
     final msg = _extractServerMessage(data);
-    if (msg != null && msg.isNotEmpty) return msg;
+    if (msg != null && msg.isNotEmpty && !_isTechnicalMessage(msg)) {
+      return _finalizeMessage(msg);
+    }
     return getErrorMessage(data);
   }
 
@@ -158,7 +190,7 @@ class ErrorHandler {
   static String? _mapProxyMessage(String text) {
     final lower = text.toLowerCase();
     if (lower.contains('error occurred while trying to proxy')) {
-      return 'تعذر الوصول إلى الخادم . حاول لاحقاً.';
+      return 'تعذر الوصول إلى الخادم. حاول لاحقاً.';
     }
     if (lower.contains('gateway timeout') || lower.contains('bad gateway')) {
       return 'الخادم غير متاح حالياً. حاول لاحقاً.';
@@ -175,7 +207,6 @@ class ErrorHandler {
   }
 
   static String _sanitizeMessage(String text) {
-    // Strip any technical prefixes or English exception words.
     var cleaned = text.trim();
     cleaned = cleaned.replaceFirst(
       RegExp(
@@ -185,19 +216,10 @@ class ErrorHandler {
       '',
     );
     cleaned = cleaned.replaceAll(
-      RegExp(r'\bException\b[:\-]?\s*', caseSensitive: false),
-      '',
-    );
-    cleaned = cleaned.replaceAll(
-      RegExp(r'\bDioException\b[:\-]?\s*', caseSensitive: false),
-      '',
-    );
-    cleaned = cleaned.replaceAll(
-      RegExp(r'\bUnhandled\b[:\-]?\s*', caseSensitive: false),
-      '',
-    );
-    cleaned = cleaned.replaceAll(
-      RegExp(r'\bError\b[:\-]?\s*', caseSensitive: false),
+      RegExp(
+        r'\b(Exception|DioException|Unhandled|Error)\b[:\-]?\s*',
+        caseSensitive: false,
+      ),
       '',
     );
     cleaned = cleaned.replaceAll(RegExp(r'\s{2,}'), ' ');
@@ -208,5 +230,42 @@ class ErrorHandler {
     final sanitized = _sanitizeMessage(message ?? '');
     if (sanitized.isNotEmpty) return sanitized;
     return 'حدث خطأ غير متوقع.';
+  }
+
+  /// ✅ فلتر: يمنع إظهار رسائل Laravel/PHP التقنية (paths/stack traces)
+  static bool _isTechnicalMessage(String text) {
+    final s = text.toLowerCase();
+
+    const keywords = [
+      'php fatal',
+      'fatal error',
+      'stack trace',
+      'syntax error',
+      'undefined',
+      'exception',
+      'sqlstate',
+      'laravel',
+      'eloquent',
+      'internaldb',
+      'vendor/',
+      ' on line ',
+      ' in ',
+      'trace',
+    ];
+
+    for (final k in keywords) {
+      if (s.contains(k)) return true;
+    }
+
+    final hasPath = RegExp(
+      r'([a-zA-Z]:\\|/var/www|/home/|/srv/|/opt/)\S+',
+    ).hasMatch(text);
+
+    final hasPhpLine = RegExp(
+      r'\.php\b|\bline\s+\d+\b',
+      caseSensitive: false,
+    ).hasMatch(text);
+
+    return hasPath || hasPhpLine;
   }
 }

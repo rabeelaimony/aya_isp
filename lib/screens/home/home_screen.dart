@@ -1,6 +1,6 @@
-﻿import 'package:aya_isp/screens/change_speed/change_speed_screen.dart';
-import 'package:aya_isp/screens/extend_traffic/extend_traffic_screen.dart';
-import 'package:aya_isp/screens/session_details/session_details_screen.dart';
+import '../change_speed/change_speed_screen.dart';
+import '../extend_traffic/extend_traffic_screen.dart';
+import '../session_details/session_details_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:aya_isp/services/session_manager.dart';
@@ -148,7 +148,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
                 actions: [
                   TextButton(
-                    onPressed: () => Navigator.of(ctx).pop(),
+                    onPressed: () => Navigator.of(ctx).maybePop(),
                     child: const Text('إغلاق'),
                   ),
                 ],
@@ -187,14 +187,14 @@ class _HomeScreenState extends State<HomeScreen> {
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
                             TextButton(
-                              onPressed: () => Navigator.of(ctx).pop(null),
+                              onPressed: () => Navigator.of(ctx).maybePop(null),
                               child: const Text('إلغاء'),
                             ),
                             const SizedBox(width: 8),
                             ElevatedButton(
                               onPressed: selected == null
                                   ? null
-                                  : () => Navigator.of(ctx).pop(selected),
+                                  : () => Navigator.of(ctx).maybePop(selected),
                               child: const Text('تأكيد'),
                             ),
                           ],
@@ -310,37 +310,26 @@ class _HomeScreenState extends State<HomeScreen> {
     return '${monthlyGb.toStringAsFixed(2)} GB';
   }
 
-  Widget _settingsChip(ThemeData theme, String label) {
-    return Chip(
-      label: Text(label),
-      backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.08),
-      labelStyle: TextStyle(color: theme.colorScheme.onSurface),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(10),
-        side: BorderSide(
-          color: theme.colorScheme.primary.withValues(alpha: 0.25),
-        ),
-      ),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: BlocListener<UserInfoCubit, UserInfoState>(
-        listener: (context, state) async {
+        listener: (context, state) {
           if (state is UserInfoLoaded) {
             final username = state.userInfo.data?.user?.personal?.username;
             if (username != null && username.isNotEmpty) {
-              final active = await SessionManager.getActiveAccount();
-              final token = active?.token;
-              try {
-                // ignore: use_build_context_synchronously
-                await context.read<AdslTrafficCubit>().fetchTraffic(
-                  username,
-                  token: token,
-                );
-              } catch (_) {}
+              SessionManager.getActiveAccount()
+                  .then((active) {
+                    final token = active?.token;
+                    try {
+                      // ignore: use_build_context_synchronously
+                      context.read<AdslTrafficCubit>().fetchTraffic(
+                        username,
+                        token: token,
+                      );
+                    } catch (_) {}
+                  })
+                  .catchError((_) {});
             }
           }
         },
@@ -378,272 +367,305 @@ class _HomeScreenState extends State<HomeScreen> {
               final data = state.userInfo.data;
               final account = data?.user?.account;
 
-              return RefreshIndicator(
-                onRefresh: _loadUserInfo,
-                child: CustomScrollView(
-                  slivers: [
-                    AppBarUser(
-                      data: data,
-                      onTap: () => showUserDetailsSheet(
-                        context,
-                        data?.user?.personal,
-                        data,
-                      ),
-                      onNotifications: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const NotificationsScreen(),
+              return WillPopScope(
+                onWillPop: () async {
+                  final shouldPop = await showDialog<bool>(
+                    context: context,
+                    builder: (context) => Directionality(
+                      textDirection: TextDirection.rtl,
+                      child: AlertDialog(
+                        title: const Text('تأكيد الخروج'),
+                        content: const Text('هل تريد الخروج من التطبيق؟'),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(false),
+                            child: const Text('إلغاء'),
                           ),
-                        );
-                      },
-                      onSettings: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const SettingsScreen(),
-                        ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(context).maybePop(true),
+                            child: const Text('نعم'),
+                          ),
+                        ],
                       ),
                     ),
-                    SliverToBoxAdapter(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          BlocBuilder<AdslTrafficCubit, AdslTrafficState>(
-                            builder: (context, trafficState) {
-                              final trafficData =
-                                  trafficState is AdslTrafficLoaded
-                                  ? trafficState.response?.data
-                                  : null;
+                  );
+                  return shouldPop ?? false;
+                },
+                child: RefreshIndicator(
+                  onRefresh: _loadUserInfo,
+                  child: CustomScrollView(
+                    slivers: [
+                      AppBarUser(
+                        data: data,
+                        onTap: () => showUserDetailsSheet(
+                          context,
+                          data?.user?.personal,
+                          data,
+                        ),
+                        onNotifications: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => const NotificationsScreen(),
+                            ),
+                          );
+                        },
+                        onSettings: () => Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const SettingsScreen(),
+                          ),
+                        ),
+                      ),
+                      SliverToBoxAdapter(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            BlocBuilder<AdslTrafficCubit, AdslTrafficState>(
+                              builder: (context, trafficState) {
+                                final trafficData =
+                                    trafficState is AdslTrafficLoaded
+                                    ? trafficState.response?.data
+                                    : null;
 
-                              return Column(
-                                crossAxisAlignment: CrossAxisAlignment.stretch,
-                                children: [
-                                  AccountCard(
-                                    account: account,
-                                    data: data,
-                                    trafficData: trafficData,
-                                  ),
-                                  const SizedBox(height: 12),
+                                return Column(
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.stretch,
+                                  children: [
+                                    AccountCard(
+                                      account: account,
+                                      data: data,
+                                      trafficData: trafficData,
+                                    ),
+                                    const SizedBox(height: 12),
 
-                                  // Monthly total consumption box (under account card)
-                                  if (trafficData?.monthTotalTrafficUsage !=
-                                      null)
-                                    Container(
-                                      margin: const EdgeInsets.symmetric(
-                                        horizontal: 16,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 14,
-                                        vertical: 12,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(
-                                          context,
-                                        ).colorScheme.surface,
-                                        borderRadius: BorderRadius.circular(12),
-                                        boxShadow: [
-                                          BoxShadow(
-                                            color: Colors.black.withValues(
-                                              alpha: 0.04,
-                                            ),
-                                            blurRadius: 8,
-                                            offset: const Offset(0, 6),
+                                    // Monthly total consumption box (under account card)
+                                    if (trafficData?.monthTotalTrafficUsage !=
+                                        null)
+                                      Container(
+                                        margin: const EdgeInsets.symmetric(
+                                          horizontal: 16,
+                                        ),
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 14,
+                                          vertical: 12,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(
+                                            context,
+                                          ).colorScheme.surface,
+                                          borderRadius: BorderRadius.circular(
+                                            12,
                                           ),
-                                        ],
-                                      ),
-                                      child: Row(
-                                        children: [
-                                          // Left: small info button (replaces previous 'تفصيل التجديد')
-                                          IconButton(
-                                            onPressed: () async {
-                                              final msg = _renewalMessage(
-                                                trafficData?.trafficRenewedAt,
-                                              );
-                                              if (!mounted) return;
-                                              showDialog<void>(
-                                                context: context,
-                                                builder: (_) => AlertDialog(
-                                                  title: Center(
-                                                    child: const Text(
-                                                      'موعد تجديد الباقة',
-                                                    ),
-                                                  ),
-                                                  content: Text(
-                                                    msg,
-                                                    textDirection:
-                                                        TextDirection.rtl,
-                                                    textAlign: TextAlign.right,
-                                                  ),
-                                                  actions: [
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.of(
-                                                            context,
-                                                          ).pop(),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withValues(
+                                                alpha: 0.04,
+                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 6),
+                                            ),
+                                          ],
+                                        ),
+                                        child: Row(
+                                          children: [
+                                            // Left: small info button (replaces previous 'تفصيل التجديد')
+                                            IconButton(
+                                              onPressed: () async {
+                                                final msg = _renewalMessage(
+                                                  trafficData?.trafficRenewedAt,
+                                                );
+                                                if (!mounted) return;
+                                                showDialog<void>(
+                                                  context: context,
+                                                  builder: (_) => AlertDialog(
+                                                    title: Center(
                                                       child: const Text(
                                                         'إغلاق',
                                                       ),
                                                     ),
-                                                  ],
-                                                ),
-                                              );
-                                            },
-                                            icon: const Icon(
-                                              Icons.info_outline,
-                                            ),
-                                            color: Theme.of(
-                                              context,
-                                            ).colorScheme.primary,
-                                            tooltip: 'تفصيل التجديد',
-                                          ),
-
-                                          const SizedBox(width: 8),
-
-                                          // Right: monthly consumption (aligned to the right)
-                                          Expanded(
-                                            child: Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.end,
-                                              children: [
-                                                Text(
-                                                  'الاستهلاك الكلي الشهري(من تاريخ تجديد الباقة)',
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .bodySmall
-                                                      ?.copyWith(
-                                                        color: Colors.grey[700],
+                                                    content: Text(
+                                                      msg,
+                                                      textDirection:
+                                                          TextDirection.rtl,
+                                                      textAlign:
+                                                          TextAlign.right,
+                                                    ),
+                                                    actions: [
+                                                      TextButton(
+                                                        onPressed: () =>
+                                                            Navigator.of(
+                                                              context,
+                                                            ).maybePop(),
+                                                        child: const Text(
+                                                          'إغلاق',
+                                                        ),
                                                       ),
-                                                ),
-                                                const SizedBox(height: 6),
-                                                Text(
-                                                  _formatMonthlyUsage(
-                                                    trafficData,
-                                                    account,
+                                                    ],
                                                   ),
-                                                  textAlign: TextAlign.right,
-                                                  style: Theme.of(context)
-                                                      .textTheme
-                                                      .titleLarge
-                                                      ?.copyWith(
-                                                        fontWeight:
-                                                            FontWeight.bold,
-                                                      ),
-                                                ),
-                                              ],
+                                                );
+                                              },
+                                              icon: const Icon(
+                                                Icons.info_outline,
+                                              ),
+                                              color: Theme.of(
+                                                context,
+                                              ).colorScheme.primary,
+                                              tooltip: 'تفصيل التجديد',
                                             ),
-                                          ),
-                                        ],
+
+                                            const SizedBox(width: 8),
+
+                                            // Right: monthly consumption (aligned to the right)
+                                            Expanded(
+                                              child: Column(
+                                                crossAxisAlignment:
+                                                    CrossAxisAlignment.end,
+                                                children: [
+                                                  Text(
+                                                    'الاستهلاك الكلي الشهري(من تاريخ تجديد الباقة)',
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .bodySmall
+                                                        ?.copyWith(
+                                                          color:
+                                                              Colors.grey[700],
+                                                        ),
+                                                  ),
+                                                  const SizedBox(height: 6),
+                                                  Text(
+                                                    _formatMonthlyUsage(
+                                                      trafficData,
+                                                      account,
+                                                    ),
+                                                    textAlign: TextAlign.right,
+                                                    style: Theme.of(context)
+                                                        .textTheme
+                                                        .titleLarge
+                                                        ?.copyWith(
+                                                          fontWeight:
+                                                              FontWeight.bold,
+                                                        ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
                                       ),
-                                    ),
-                                  const SizedBox(height: 12),
-                                ],
-                              );
-                            },
-                          ),
-                          if (data?.user?.personal?.username != null)
-                            AdslTrafficWidget(
-                              username: data!.user!.personal!.username!,
-                              account: data.user?.account,
+                                    const SizedBox(height: 12),
+                                  ],
+                                );
+                              },
                             ),
-                          const SizedBox(height: 16),
-                          Center(
-                            child: Text(
-                              'لوحة التحكم',
-                              style: const TextStyle(
-                                fontSize: 20,
-                                fontWeight: FontWeight.bold,
+                            if (data?.user?.personal?.username != null)
+                              AdslTrafficWidget(
+                                username: data!.user!.personal!.username!,
+                                account: data.user?.account,
+                              ),
+                            const SizedBox(height: 16),
+                            Center(
+                              child: Text(
+                                'خدمات الحساب',
+                                style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                ),
                               ),
                             ),
-                          ),
-                          // const SizedBox(height: 16),
-                        ],
+                            // const SizedBox(height: 16),
+                          ],
+                        ),
                       ),
-                    ),
-                    SliverPadding(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      sliver: SliverToBoxAdapter(
-                        child: Directionality(
-                          textDirection: TextDirection.rtl,
-                          child: LayoutBuilder(
-                            builder: (context, constraints) {
-                              final maxWidth = constraints.maxWidth;
-                              // نحافظ على ٤ أزرار في الصف على الشاشات العادية والكبيرة
-                              // ونخفّضها إلى ٣ أو ٢ فقط عند الشاشات الصغيرة جداً
-                              // حتى يبقى العنوان داخل الزر واضحاً وغير مكتوم.
-                              int crossAxisCount;
-                              if (maxWidth < 320) {
-                                crossAxisCount = 2;
-                              } else if (maxWidth < 420) {
-                                crossAxisCount = 3;
-                              } else {
-                                crossAxisCount = 4;
-                              }
+                      SliverPadding(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 8,
+                        ),
+                        sliver: SliverToBoxAdapter(
+                          child: Directionality(
+                            textDirection: TextDirection.rtl,
+                            child: LayoutBuilder(
+                              builder: (context, constraints) {
+                                final maxWidth = constraints.maxWidth;
+                                // نحافظ على 4 ازرار في الصف على الشاشات العادية والكبيرة
+                                // ونخفضها الى 3 او 2 فقط عند الشاشات الصغيرة جدا
+                                // حتى يبقى العنوان داخل الزر واضحا وغير مكتوم.
+                                int crossAxisCount;
+                                if (maxWidth < 320) {
+                                  crossAxisCount = 2;
+                                } else if (maxWidth < 420) {
+                                  crossAxisCount = 3;
+                                } else {
+                                  crossAxisCount = 4;
+                                }
 
-                              final totalWidth = maxWidth;
-                              final itemWidth = totalWidth / crossAxisCount;
-                              final itemHeight = itemWidth * 1.05;
-                              final childAspectRatio = itemWidth / itemHeight;
+                                final totalWidth = maxWidth;
+                                final itemWidth = totalWidth / crossAxisCount;
+                                final itemHeight = itemWidth * 1.05;
+                                final childAspectRatio = itemWidth / itemHeight;
 
-                              return GridView.count(
-                                crossAxisCount: crossAxisCount,
-                                shrinkWrap: true,
-                                physics: const NeverScrollableScrollPhysics(),
-                                mainAxisSpacing: 14,
-                                crossAxisSpacing: 14,
-                                childAspectRatio: childAspectRatio,
-                                children: [
-                                  _buildControlItem(
-                                    context,
-                                    Icons.bar_chart,
-                                    'بيانات الدخول',
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.receipt_outlined,
-                                    _financialStatementTitle,
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.credit_card_outlined,
-                                    'شحن الحساب',
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.refresh,
-                                    'تغيير نوع الحساب',
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.speed,
-                                    'تعديل السرعة',
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.north_east,
-                                    _extraPackagesTitle,
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.add_box_outlined,
-                                    _extendTrafficTitle,
-                                  ),
-                                  _buildControlItem(
-                                    context,
-                                    Icons.auto_fix_high,
-                                    _extendValidityTitle,
-                                    onTap: () => _openExtendValiditySheet(data),
-                                  ),
-                                ],
-                              );
-                            },
+                                return GridView.count(
+                                  crossAxisCount: crossAxisCount,
+                                  shrinkWrap: true,
+                                  physics: const NeverScrollableScrollPhysics(),
+                                  mainAxisSpacing: 14,
+                                  crossAxisSpacing: 14,
+                                  childAspectRatio: childAspectRatio,
+                                  children: [
+                                    _buildControlItem(
+                                      context,
+                                      Icons.bar_chart,
+                                      'بيانات الدخول',
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.receipt_outlined,
+                                      _financialStatementTitle,
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.credit_card_outlined,
+                                      'شحن الحساب',
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.refresh,
+                                      'تغيير نوع الحساب',
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.speed,
+                                      'تعديل السرعة',
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.north_east,
+                                      _extraPackagesTitle,
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.add_box_outlined,
+                                      _extendTrafficTitle,
+                                    ),
+                                    _buildControlItem(
+                                      context,
+                                      Icons.auto_fix_high,
+                                      _extendValidityTitle,
+                                      onTap: () =>
+                                          _openExtendValiditySheet(data),
+                                    ),
+                                  ],
+                                );
+                              },
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               );
             }
@@ -740,55 +762,4 @@ class ComingSoonPage extends StatelessWidget {
       ),
     );
   }
-}
-
-class _GuestGaugePainter extends CustomPainter {
-  final Color baseColor;
-  final Color accentColor;
-  final bool isHalfCircle;
-
-  const _GuestGaugePainter({
-    required this.baseColor,
-    required this.accentColor,
-    this.isHalfCircle = false,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final center = Offset(size.width / 2, size.height / 2);
-    final radius = (size.shortestSide / 2) - 12;
-    final basePaint = Paint()
-      ..color = baseColor
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
-
-    final accentPaint = Paint()
-      ..shader = SweepGradient(
-        startAngle: isHalfCircle ? -3.14 : -3.14 / 2,
-        endAngle: isHalfCircle ? 3.14 : 3 * 3.14 / 2,
-        colors: [accentColor, accentColor.withValues(alpha: 0.4)],
-      ).createShader(Rect.fromCircle(center: center, radius: radius))
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 12
-      ..strokeCap = StrokeCap.round;
-
-    final rect = Rect.fromCircle(center: center, radius: radius);
-    final startAngle = isHalfCircle ? -3.14 : -3.14 / 2;
-    final sweep = isHalfCircle ? 3.14 : 2 * 3.14;
-
-    canvas.drawArc(rect, startAngle, sweep, false, basePaint);
-
-    const previewProgress = 0.25;
-    canvas.drawArc(
-      rect,
-      startAngle,
-      sweep * previewProgress,
-      false,
-      accentPaint,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

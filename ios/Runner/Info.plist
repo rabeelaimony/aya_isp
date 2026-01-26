@@ -57,10 +57,6 @@
 		<string>Allow access to the photo library to select images.</string>
 		<key>NSPhotoLibraryAddUsageDescription</key>
 		<string>Allow access to save images to the photo library.</string>
-			<key>NSLocationWhenInUseUsageDescription</key>
-		<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
-			<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
-		<string>نحتاج إلى إذن الموقع لاكتشاف شبكة Wi-Fi وعرض الأجهزة المتصلة.</string>
 	<key>UIBackgroundModes</key>
 	<array>
 		<string>remote-notification</string>

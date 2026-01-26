@@ -131,3 +131,4 @@ class _ForceUpdateDialog extends StatelessWidget {
     showAppMessage(context, message, type: AppMessageType.error);
   }
 }
+

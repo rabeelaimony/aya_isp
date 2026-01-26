@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -183,7 +183,7 @@ class _SpeedChangeScreenState extends State<SpeedChangeScreen> {
             content: Text(msg),
             actions: [
               TextButton(
-                onPressed: () => Navigator.of(context).pop(),
+                onPressed: () => Navigator.of(context).maybePop(),
                 child: const Text('إغلاق'),
               ),
             ],
@@ -614,3 +614,4 @@ class _SpeedChangeScreenState extends State<SpeedChangeScreen> {
     );
   }
 }
+

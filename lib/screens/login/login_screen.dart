@@ -41,8 +41,6 @@ class _LoginScreenState extends State<LoginScreen>
   List<SavedCredential> _savedCredentials = [];
 
   late AnimationController _animationController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
 
   @override
   void initState() {
@@ -52,15 +50,6 @@ class _LoginScreenState extends State<LoginScreen>
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     );
-
-    _fadeAnimation = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-    );
-
-    _slideAnimation =
-        Tween<Offset>(begin: const Offset(0, 0.5), end: Offset.zero).animate(
-          CurvedAnimation(parent: _animationController, curve: Curves.easeOut),
-        );
 
     _animationController.forward();
     _loadSavedUsername();
@@ -170,7 +159,6 @@ class _LoginScreenState extends State<LoginScreen>
                 setState(() => _isPostLoginLoading = true);
 
                 final username = _usernameController.text.trim();
-                final password = _passwordController.text;
 
                 final prefs = await SharedPreferences.getInstance();
                 await prefs.setString('username', username);
@@ -194,13 +182,14 @@ class _LoginScreenState extends State<LoginScreen>
                 try {
                   final token = state.user.token;
                   if (token.isNotEmpty && username.isNotEmpty) {
-                    await context
-                        .read<UserInfoCubit>()
-                        .fetchUserInfo(token, username);
+                    await context.read<UserInfoCubit>().fetchUserInfo(
+                      token,
+                      username,
+                    );
                     await context.read<AdslTrafficCubit>().fetchTraffic(
-                          username,
-                          token: token,
-                        );
+                      username,
+                      token: token,
+                    );
                   }
                 } catch (e) {
                   refreshError = ErrorHandler.getErrorMessage(e);

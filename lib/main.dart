@@ -20,9 +20,10 @@ import 'core/app_info.dart';
 import 'screens/splach/splach_screen.dart';
 import 'screens/login/login_screen.dart';
 
-import 'screens/settings/accounts_screen.dart';
+import 'package:aya_isp/screens/settings/accounts_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/notifications/notifications_screen.dart';
+import 'screens/simple_app/simple_app_home_screen.dart';
 
 // Cubits
 import 'cubits/auth_cubit.dart';
@@ -502,22 +503,6 @@ Future<void> _restorePendingNotificationFromStorage() async {
   }
 }
 
-Future<void> _navigateToHomeSafely() async {
-  // انتظر حتى يصبح الـ Navigator جاهزاً قبل الانتقال للصفحة الرئيسية.
-  await WidgetsBinding.instance.endOfFrame;
-
-  for (var i = 0; i < 8; i++) {
-    final navigator = appNavigatorKey.currentState;
-    if (navigator != null && navigator.mounted) {
-      navigator.pushNamedAndRemoveUntil('/home', (route) => false);
-      return;
-    }
-    await Future<void>.delayed(const Duration(milliseconds: 40));
-  }
-
-  // إذا لم يصبح الـ navigator جاهزاً بعد المحاولات، نتوقف بصمت.
-}
-
 Future<void> _navigateToNotificationsSafely() async {
   await WidgetsBinding.instance.endOfFrame;
 
@@ -602,6 +587,7 @@ class MyApp extends StatelessWidget {
         '/splash': (context) => const SplashScreen(),
         '/login': (context) => const LoginScreen(),
         '/home': (context) => const HomeScreen(),
+        '/simple': (context) => const SimpleAppHomeScreen(),
       },
       // ضبط الـ builder لتحسين الوصولية وتثبيت تكبير النص وإخفاء الزوايا السفلية.
       builder: (context, child) {

@@ -91,7 +91,7 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
                   state.message,
                   type: AppMessageType.success,
                 );
-                Navigator.pop(context); // رجوع بعد النجاح
+                Navigator.maybePop(context); // رجوع بعد النجاح
               }
             } else if (state is ChangePasswordError) {
               if (mounted) {
@@ -398,3 +398,4 @@ class _ChangePasswordScreenState extends State<ChangePasswordScreen> {
     );
   }
 }
+

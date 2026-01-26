@@ -70,7 +70,7 @@ class _ExtendTrafficScreenState extends State<ExtendTrafficScreen> {
                 state.message,
                 type: AppMessageType.success,
               );
-              Navigator.of(context).pop(true);
+              Navigator.of(context).maybePop(true);
             } else if (state is ExpandTrafficError) {
               showAppMessage(
                 context,
@@ -384,3 +384,4 @@ class _ErrorView extends StatelessWidget {
     );
   }
 }
+

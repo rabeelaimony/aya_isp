@@ -245,11 +245,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.maybePop(context, false),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.maybePop(context, true),
             child: const Text('تأكيد'),
           ),
         ],
@@ -277,11 +277,11 @@ class _AccountsScreenState extends State<AccountsScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context, false),
+            onPressed: () => Navigator.maybePop(context, false),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
+            onPressed: () => Navigator.maybePop(context, true),
             child: const Text('حذف'),
           ),
         ],
@@ -337,7 +337,7 @@ class _AccountsScreenState extends State<AccountsScreen> {
             onPressed: () {
               final navigator = Navigator.of(context);
               if (navigator.canPop()) {
-                navigator.pop();
+                navigator.maybePop();
               } else {
                 navigator.pushAndRemoveUntil(
                   MaterialPageRoute(builder: (_) => const HomeScreen()),
@@ -478,3 +478,4 @@ class _AccountsScreenState extends State<AccountsScreen> {
     );
   }
 }
+

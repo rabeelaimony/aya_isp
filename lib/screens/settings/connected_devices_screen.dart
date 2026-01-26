@@ -1,4 +1,4 @@
-﻿import 'dart:async';
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -144,12 +144,12 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: () => Navigator.of(ctx).pop(),
+                  onPressed: () => Navigator.of(ctx).maybePop(),
                   child: const Text('إلغاء'),
                 ),
                 TextButton(
                   onPressed: () {
-                    Navigator.of(ctx).pop();
+                    Navigator.of(ctx).maybePop();
                     openAppSettings();
                   },
                   child: const Text('فتح الإعدادات'),
@@ -187,11 +187,11 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
+            onPressed: () => Navigator.of(ctx).maybePop(true),
             child: const Text('موافقة'),
           ),
           TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
+            onPressed: () => Navigator.of(ctx).maybePop(false),
             child: const Text('إلغاء'),
           ),
         ],
@@ -532,7 +532,7 @@ class _ConnectedDevicesScreenState extends State<ConnectedDevicesScreen> {
 
 class _WifiBadge extends StatelessWidget {
   final String ssid;
-  const _WifiBadge({super.key, required this.ssid});
+  const _WifiBadge({required this.ssid});
 
   @override
   Widget build(BuildContext context) {
@@ -626,7 +626,7 @@ class _ErrorMessage extends StatelessWidget {
 
 class _ScanningOverlay extends StatefulWidget {
   final String ssid;
-  const _ScanningOverlay({super.key, this.ssid = ''});
+  const _ScanningOverlay({this.ssid = ''});
 
   @override
   State<_ScanningOverlay> createState() => _ScanningOverlayState();
@@ -676,7 +676,7 @@ class _ScanningOverlayState extends State<_ScanningOverlay>
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: theme.colorScheme.primary.withOpacity(
-                          (pulseOpacity.clamp(0.0, 1.0)) as double,
+                          pulseOpacity.clamp(0.0, 1.0),
                         ),
                       ),
                     ),
@@ -752,3 +752,4 @@ class _ScanningOverlayState extends State<_ScanningOverlay>
     );
   }
 }
+

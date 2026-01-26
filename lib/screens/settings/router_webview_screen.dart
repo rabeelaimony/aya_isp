@@ -186,7 +186,7 @@ class _RouterWebViewScreenState extends State<RouterWebViewScreen> {
                                 actions: [
                                   TextButton(
                                     onPressed: () =>
-                                        Navigator.of(context).pop(),
+                                        Navigator.of(context).maybePop(),
                                     child: const Text('إغلاق'),
                                   ),
                                 ],
@@ -209,3 +209,4 @@ class _RouterWebViewScreenState extends State<RouterWebViewScreen> {
     );
   }
 }
+

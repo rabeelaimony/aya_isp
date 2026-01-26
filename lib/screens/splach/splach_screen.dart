@@ -1,13 +1,15 @@
-import 'dart:math';
+﻿import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:aya_isp/services/notification_center.dart';
 import 'package:aya_isp/services/session_manager.dart';
 import 'package:aya_isp/screens/login/login_screen.dart';
 import 'package:aya_isp/screens/home/home_screen.dart';
+import 'package:aya_isp/screens/simple_app/simple_app_home_screen.dart';
 import 'package:aya_isp/cubits/userinfo_cubit.dart';
 import 'package:aya_isp/cubits/adsl_traffic_cubit.dart';
 import 'package:aya_isp/screens/settings/settings_screen.dart';
+import 'package:aya_isp/core/feature_flags.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -22,6 +24,8 @@ class _SplashScreenState extends State<SplashScreen>
   bool _isLoading = true;
   bool _hasError = false;
   bool _isInitializing = false;
+  bool _allowRetry = true;
+  bool _showLoginSettingsActions = false;
   String _statusMessage = 'جارٍ تهيئة التطبيق';
 
   @override
@@ -43,12 +47,37 @@ class _SplashScreenState extends State<SplashScreen>
     setState(() {
       _hasError = false;
       _isLoading = true;
+      _allowRetry = true;
+      _showLoginSettingsActions = false;
       _statusMessage = 'جارٍ تحميل البيانات';
     });
 
     final startTime = DateTime.now();
 
     try {
+      setState(() {
+        _statusMessage = 'جارٍ التحقق';
+      });
+      final loginResult = await FeatureFlags.loginCheckStatus();
+      if (loginResult.status == LoginCheckStatus.unavailable) {
+        _showError(
+          loginResult.message ??
+              'تعذر التحقق من حالة تسجيل الدخول. يرجى المحاولة مجددًا.',
+          allowRetry: true,
+          showLoginSettings: false,
+        );
+        return;
+      }
+      if (loginResult.status == LoginCheckStatus.notWorking) {
+        final elapsed = DateTime.now().difference(startTime);
+        final remaining = const Duration(milliseconds: 600) - elapsed;
+        if (remaining > Duration.zero) {
+          await Future.delayed(remaining);
+        }
+        if (!mounted) return;
+        _navigateToSimpleApp();
+        return;
+      }
       final activeAccount = await SessionManager.getActiveAccount();
       if (activeAccount != null) {
         NotificationCenter.instance.setCurrentUser(
@@ -90,11 +119,11 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
 
       if (!gotUserInfo) {
-        final state = userCubit.state;
-        final message = state is UserInfoError
-            ? state.message
-            : 'تعذر جلب بيانات المستخدم.';
-        _showError(message);
+        _showError(
+          'تعذر إتمام تسجيل الدخول الآن. يرجى المحاولة لاحقًا.',
+          allowRetry: false,
+          showLoginSettings: true,
+        );
         return;
       }
 
@@ -106,11 +135,11 @@ class _SplashScreenState extends State<SplashScreen>
       if (!mounted) return;
 
       if (!gotTraffic) {
-        final state = trafficCubit.state;
-        final message = state is AdslTrafficError
-            ? state.message
-            : 'تعذر جلب بيانات الاستهلاك.';
-        _showError(message);
+        _showError(
+          'تعذر إتمام تسجيل الدخول الآن. يرجى المحاولة لاحقًا.',
+          allowRetry: false,
+          showLoginSettings: true,
+        );
         return;
       }
       final elapsed = DateTime.now().difference(startTime);
@@ -124,13 +153,18 @@ class _SplashScreenState extends State<SplashScreen>
       _isInitializing = false;
     }
   }
-
-  void _showError(String message) {
+  void _showError(
+    String message, {
+    required bool allowRetry,
+    required bool showLoginSettings,
+  }) {
     if (!mounted) return;
     setState(() {
       _hasError = true;
       _isLoading = false;
       _statusMessage = message;
+      _allowRetry = allowRetry;
+      _showLoginSettingsActions = showLoginSettings;
     });
   }
 
@@ -161,6 +195,28 @@ class _SplashScreenState extends State<SplashScreen>
     Navigator.of(context).pushReplacement(
       PageRouteBuilder(
         pageBuilder: (_, __, ___) => const LoginScreen(),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(
+            opacity: animation,
+            child: ScaleTransition(
+              scale: CurvedAnimation(
+                parent: animation,
+                curve: Curves.easeOutBack,
+              ),
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    );
+  }
+
+  void _navigateToSimpleApp() {
+    _controller.stop();
+    Navigator.of(context).pushReplacement(
+      PageRouteBuilder(
+        pageBuilder: (_, __, ___) => const SimpleAppHomeScreen(),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(
             opacity: animation,
@@ -334,59 +390,64 @@ class _SplashScreenState extends State<SplashScreen>
               ),
               if (_hasError) ...[
                 const SizedBox(height: 16),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: ElevatedButton.icon(
-                            onPressed: () => _startInitialization(),
-                            icon: const Icon(Icons.refresh, size: 18),
-                            label: const Text('إعادة المحاولة'),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: theme.colorScheme.secondary,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: OutlinedButton.icon(
-                            onPressed: _navigateToSettings,
-                            style: OutlinedButton.styleFrom(
-                              foregroundColor: Colors.white,
-                              side: BorderSide(
-                                color: Colors.white.withValues(alpha: 0.6),
-                              ),
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(14),
-                              ),
-                            ),
-                            icon: const Icon(Icons.settings_outlined, size: 18),
-                            label: const Text('الإعدادات'),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: TextButton(
-                        onPressed: _navigateToLogin,
-                        style: TextButton.styleFrom(
+                if (_allowRetry)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      ElevatedButton.icon(
+                        onPressed: () => _startInitialization(),
+                        icon: const Icon(Icons.refresh, size: 18),
+                        label: const Text('إعادة المحاولة'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: theme.colorScheme.secondary,
                           foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        child: const Text('تسجيل الدخول'),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                if (_showLoginSettingsActions) ...[
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _navigateToSettings,
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: BorderSide(
+                              color: Colors.white.withValues(alpha: 0.6),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                          icon: const Icon(Icons.settings_outlined, size: 18),
+                          label: const Text('الإعدادات'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton.icon(
+                          onPressed: _navigateToLogin,
+                          icon: const Icon(Icons.login, size: 18),
+                          label: const Text('تسجيل الدخول'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: theme.colorScheme.secondary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ],
           ),
@@ -451,4 +512,15 @@ class StarsPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant StarsPainter oldDelegate) => true;
 }
+
+
+
+
+
+
+
+
+
+
+
 

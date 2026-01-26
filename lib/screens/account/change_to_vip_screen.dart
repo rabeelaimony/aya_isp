@@ -135,7 +135,7 @@ class _ChangeToVipScreenState extends State<ChangeToVipScreen> {
                           state.message,
                           type: AppMessageType.success,
                         );
-                        Navigator.of(context).pop(true);
+                        Navigator.of(context).maybePop(true);
                       } else if (state is ChangeAccountError) {
                         showAppMessage(
                           context,
@@ -192,3 +192,4 @@ class _ChangeToVipScreenState extends State<ChangeToVipScreen> {
     );
   }
 }
+

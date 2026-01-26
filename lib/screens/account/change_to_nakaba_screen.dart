@@ -119,11 +119,11 @@ class _ChangeToNakabaScreenState extends State<ChangeToNakabaScreen> {
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(false),
+              onPressed: () => Navigator.of(ctx).maybePop(false),
               child: const Text('ليس الآن'),
             ),
             TextButton(
-              onPressed: () => Navigator.of(ctx).pop(true),
+              onPressed: () => Navigator.of(ctx).maybePop(true),
               child: const Text('فتح الإعدادات'),
             ),
           ],
@@ -408,7 +408,7 @@ class _ChangeToNakabaScreenState extends State<ChangeToNakabaScreen> {
                           state.message,
                           type: AppMessageType.success,
                         );
-                        Navigator.of(context).pop(true);
+                        Navigator.of(context).maybePop(true);
                       } else if (state is ChangeAccountError) {
                         showAppMessage(
                           context,
@@ -480,3 +480,4 @@ class _ChangeToNakabaScreenState extends State<ChangeToNakabaScreen> {
     }
   }
 }
+

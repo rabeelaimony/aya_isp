@@ -1,13 +1,14 @@
-﻿import 'package:flutter/material.dart';
+﻿import 'dart:io';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:network_info_plus/network_info_plus.dart';
-import 'package:aya_isp/screens/settings/about_app_screen.dart';
-import 'package:aya_isp/screens/settings/accounts_screen.dart';
-import 'package:aya_isp/screens/settings/connected_devices_screen.dart';
-import 'package:aya_isp/screens/settings/router_webview_screen.dart';
-import 'package:aya_isp/core/ui.dart';
-import 'package:aya_isp/screens/login/login_screen.dart';
-import 'package:aya_isp/screens/change_password/change_password_screen.dart';
+import 'about_app_screen.dart';
+import 'accounts_screen.dart';
+import 'connected_devices_screen.dart';
+import 'router_webview_screen.dart';
+import '../../core/ui.dart';
+import '../login/login_screen.dart';
+import '../change_password/change_password_screen.dart';
 import 'package:aya_isp/cubits/auth_cubit.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -31,11 +32,11 @@ class SettingsScreen extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: () => Navigator.of(context).pop(false),
+            onPressed: () => Navigator.of(context).maybePop(false),
             child: const Text('إلغاء'),
           ),
           ElevatedButton(
-            onPressed: () => Navigator.of(context).pop(true),
+            onPressed: () => Navigator.of(context).maybePop(true),
             style: ElevatedButton.styleFrom(
               backgroundColor: Theme.of(context).colorScheme.error,
               foregroundColor: Theme.of(context).colorScheme.onError,
@@ -58,7 +59,7 @@ class SettingsScreen extends StatelessWidget {
     final logoutResult = await context.read<AuthCubit>().logout();
 
     if (context.mounted) {
-      Navigator.of(context).pop(); // close loading
+      Navigator.of(context).maybePop(); // close loading
     }
 
     if (context.mounted) {
@@ -67,7 +68,7 @@ class SettingsScreen extends StatelessWidget {
         (route) => false,
       );
 
-      // ط±ط³ط§ظ„ط© ظ†ط¬ط§ط­ ظ…ظˆط­ط¯ط©
+      // رسالة نجاح موحدة
       showAppMessage(
         context,
         logoutResult.message,
@@ -273,7 +274,8 @@ class SettingsScreen extends StatelessWidget {
                 ),
                 child: InkWell(
                   onTap: () async {
-                    // ط¹ط±ط¶ ط§ظ„ط®ظٹط§ط±ط§طھ ط§ظ„ط³ط±ظٹط¹ط©
+                    // عرض الخيارات السريعة
+                    final isAndroid = Platform.isAndroid;
                     final choice = await showModalBottomSheet<String>(
                       context: context,
                       builder: (_) => Directionality(
@@ -286,13 +288,16 @@ class SettingsScreen extends StatelessWidget {
                               title: const Text(
                                 'فتح صفحة الراوتر (داخل التطبيق)',
                               ),
-                              onTap: () => Navigator.of(context).pop('router'),
+                              onTap: () =>
+                                  Navigator.of(context).maybePop('router'),
                             ),
-                            ListTile(
-                              leading: const Icon(Icons.devices),
-                              title: const Text('عرض الأجهزة المتصلة بالشبكة'),
-                              onTap: () => Navigator.of(context).pop('devices'),
-                            ),
+                            if (isAndroid)
+                              ListTile(
+                                leading: const Icon(Icons.devices),
+                                title: const Text('عرض الأجهزة المتصلة بالشبكة'),
+                                onTap: () =>
+                                    Navigator.of(context).maybePop('devices'),
+                              ),
                           ],
                         ),
                       ),
@@ -302,7 +307,7 @@ class SettingsScreen extends StatelessWidget {
 
                     if (choice == 'router') {
                       await _openRouterUi(context);
-                    } else if (choice == 'devices') {
+                    } else if (choice == 'devices' && isAndroid) {
                       if (!context.mounted) return;
                       Navigator.of(context).push(
                         MaterialPageRoute(
@@ -490,3 +495,8 @@ class SettingsScreen extends StatelessWidget {
     );
   }
 }
+
+
+
+
+

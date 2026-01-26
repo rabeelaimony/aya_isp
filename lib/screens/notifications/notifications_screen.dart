@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:intl/intl.dart';
 import 'dart:io';
@@ -460,7 +460,7 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
               onPressed: () {
                 final navigator = Navigator.of(context);
                 if (navigator.canPop()) {
-                  navigator.pop();
+                  navigator.maybePop();
                 } else {
                   navigator.pushNamedAndRemoveUntil('/home', (route) => false);
                 }
@@ -606,7 +606,9 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                           child: Container(
                             padding: const EdgeInsets.all(12),
                             decoration: BoxDecoration(
-                              color: theme.colorScheme.primary.withOpacity(0.08),
+                              color: theme.colorScheme.primary.withOpacity(
+                                0.08,
+                              ),
                               borderRadius: BorderRadius.circular(12),
                             ),
                             child: Row(
@@ -627,14 +629,15 @@ class _NotificationsScreenState extends State<NotificationsScreen> {
                                       ),
                                       if (_permissionDebugStatus != null)
                                         Padding(
-                                          padding:
-                                              const EdgeInsets.only(top: 4),
+                                          padding: const EdgeInsets.only(
+                                            top: 4,
+                                          ),
                                           child: Text(
                                             _permissionDebugStatus!,
                                             style: theme.textTheme.bodySmall
                                                 ?.copyWith(
-                                              color: theme.hintColor,
-                                            ),
+                                                  color: theme.hintColor,
+                                                ),
                                           ),
                                         ),
                                     ],
@@ -777,3 +780,4 @@ class _NotificationCard extends StatelessWidget {
     );
   }
 }
+

@@ -10,7 +10,7 @@ import '../../cubits/traffic_package_state.dart';
 import '../../models/traffic_package_model.dart';
 import '../../cubits/userinfo_cubit.dart';
 import '../../cubits/traffic_charge_cubit.dart';
-import '../../cubits/adsl_traffic_cubit.dart';
+import '../../widgets/recharge_processing_dialog.dart';
 import '../../core/ui.dart';
 
 class PackagesListScreen extends StatefulWidget {
@@ -58,18 +58,6 @@ class _PackagesListScreenState extends State<PackagesListScreen> {
 
               // Wrap the list with a Stack so we can show fixed buttons on top
               // (right: renewal details, left: monthly total usage)
-              // Attempt to get monthly usage from AdslTrafficCubit if available
-              double? monthUsage;
-              try {
-                final adslCubitState = context.read<AdslTrafficCubit>().state;
-                if (adslCubitState is AdslTrafficLoaded) {
-                  monthUsage =
-                      adslCubitState.response?.data?.monthTotalTrafficUsage;
-                }
-              } catch (_) {
-                monthUsage = null;
-              }
-
               return Stack(
                 children: [
                   ListView.separated(
@@ -243,13 +231,28 @@ class _ChargeExtraTrafficScreenState extends State<ChargeExtraTrafficScreen> {
                                       token: storedToken,
                                     );
 
+                                await showDialog(
+                                  context: context,
+                                  barrierDismissible: false,
+                                  builder: (_) => const RechargeProcessingDialog(
+                                    seconds: 60,
+                                    message:
+                                        'تم استلام طلب شحن الباقة الإضافية وسيتم تنفيذ العملية خلال لحظات. يرجى الانتظار... سيتم تحديث البيانات تلقائياً.',
+                                  ),
+                                );
+
+                                if (!mounted) return;
+                                // Allow the dialog route to fully pop before popping this screen.
+                                await Future<void>.delayed(
+                                  const Duration(milliseconds: 150),
+                                );
+                                if (!mounted) return;
                                 showAppMessage(
                                   context,
                                   msg,
                                   type: AppMessageType.success,
                                 );
-
-                                Navigator.of(context).pop();
+                                Navigator.of(context).maybePop();
                               } catch (e) {
                                 String text;
                                 if (e is Exception) {
@@ -298,3 +301,4 @@ class _ChargeExtraTrafficScreenState extends State<ChargeExtraTrafficScreen> {
     );
   }
 }
+

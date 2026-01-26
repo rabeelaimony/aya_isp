@@ -23,7 +23,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   final int _perPage = 10;
   int _lastPage = 1;
   bool _isFetching = false;
-  bool _didJumpToLast = false;
   bool _isMonthChanging = false;
 
   @override
@@ -43,7 +42,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
   Future<void> _loadData({int? page, bool preferLastPage = false}) async {
     if (_isFetching) return;
     if (preferLastPage) {
-      _didJumpToLast = false;
       if (mounted) setState(() => _isMonthChanging = true);
     }
     _isFetching = true;
@@ -91,7 +89,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
           );
         }
       }
-      _didJumpToLast = true;
     } else {
       await context.read<SessionDetailCubit>().fetchSessions(
         username: widget.username,
@@ -532,7 +529,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
                           _selectedMonth = value;
                           _currentPage = 1;
                           _lastPage = 1;
-                          _didJumpToLast = false;
                         });
                         _loadData(preferLastPage: true);
                       }
@@ -673,204 +669,6 @@ class _SessionDetailsScreenState extends State<SessionDetailsScreen> {
               fontWeight: FontWeight.w700,
               fontSize: 11,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoChip({
-    required IconData icon,
-    required String value,
-    required Color color,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.25)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: color,
-              fontWeight: FontWeight.w700,
-              fontSize: 12,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timeLine({
-    required String time,
-    required String date,
-    required Color color,
-  }) {
-    final muted = Theme.of(context).colorScheme.onSurface.withOpacity(0.6);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Text(
-          time,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            color: color,
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-          ),
-          textDirection: ui.TextDirection.rtl,
-        ),
-        const SizedBox(height: 2),
-        Text(
-          date,
-          textAlign: TextAlign.right,
-          style: TextStyle(
-            color: muted,
-            fontSize: 11,
-            fontWeight: FontWeight.w600,
-          ),
-          textDirection: ui.TextDirection.rtl,
-        ),
-      ],
-    );
-  }
-
-  Widget _statPill({
-    required IconData icon,
-    required String label,
-    required String value,
-    Color? color,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final surface = colorScheme.surface;
-    final outline = colorScheme.outline;
-    final muted = colorScheme.onSurface.withOpacity(0.6);
-    final Color tint = color ?? colorScheme.primary;
-    final showLabel = label.trim().isNotEmpty;
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: outline.withOpacity(0.25)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(5),
-            decoration: BoxDecoration(
-              color: tint.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 15, color: tint),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              if (showLabel)
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    color: muted,
-                    fontSize: 11,
-                  ),
-                  textAlign: TextAlign.right,
-                  textDirection: ui.TextDirection.rtl,
-                ),
-              if (showLabel) const SizedBox(height: 2),
-              Text(
-                value,
-                style: TextStyle(
-                  color: tint,
-                  fontWeight: FontWeight.w800,
-                  fontSize: 13,
-                ),
-                textAlign: TextAlign.right,
-                textDirection: ui.TextDirection.rtl,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _timeCard({
-    required String label,
-    required DateTime? value,
-    required Color valueColor,
-    required IconData icon,
-  }) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final surface = colorScheme.surface;
-    final outline = colorScheme.outline;
-    final muted = colorScheme.onSurface.withOpacity(0.6);
-    final parts = _formatDateParts(value);
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-      decoration: BoxDecoration(
-        color: surface,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: outline.withOpacity(0.25)),
-      ),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(6),
-            decoration: BoxDecoration(
-              color: valueColor.withOpacity(0.12),
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, size: 16, color: valueColor),
-          ),
-          const SizedBox(width: 8),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(
-                label,
-                style: TextStyle(
-                  color: colorScheme.onSurface,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-                textAlign: TextAlign.right,
-                textDirection: ui.TextDirection.rtl,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                parts['time'] ?? '-',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: valueColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w800,
-                ),
-                textDirection: ui.TextDirection.rtl,
-              ),
-              const SizedBox(height: 2),
-              Text(
-                parts['date'] ?? '-',
-                textAlign: TextAlign.right,
-                style: TextStyle(
-                  color: muted,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
-                textDirection: ui.TextDirection.rtl,
-              ),
-            ],
           ),
         ],
       ),
