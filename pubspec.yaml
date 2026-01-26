@@ -2,7 +2,7 @@ name: aya_isp
 description: "A new Flutter project."
 publish_to: 'none'
 
-version: 1.0.7+17
+version: 1.0.7+1
 
 environment:
   sdk: ^3.9.2
