@@ -3,6 +3,9 @@ import 'package:aya_isp/screens/simple_app/account_prices_screen.dart';
 import 'package:aya_isp/screens/simple_app/hosting_service_screen.dart';
 import 'package:aya_isp/screens/simple_app/aya_wifi_screen.dart';
 import 'package:aya_isp/screens/simple_app/offers_notifications_screen.dart';
+import 'package:aya_isp/screens/simple_app/package_recommender_screen.dart';
+import 'package:aya_isp/screens/simple_app/support_request_screen.dart';
+import 'package:aya_isp/screens/simple_app/faq_screen.dart';
 
 class SimpleAppHomeScreen extends StatelessWidget {
   const SimpleAppHomeScreen({super.key});
@@ -80,6 +83,39 @@ class SimpleAppHomeScreen extends StatelessWidget {
                           Navigator.of(context).push(
                             MaterialPageRoute(
                               builder: (_) => const AyaWifiScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _QuickLinkCard(
+                        icon: Icons.calculate_outlined,
+                        title: 'حاسبة الباقة',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const PackageRecommenderScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _QuickLinkCard(
+                        icon: Icons.support_agent_outlined,
+                        title: 'الدعم الفني',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const SupportRequestScreen(),
+                            ),
+                          );
+                        },
+                      ),
+                      _QuickLinkCard(
+                        icon: Icons.help_outline,
+                        title: 'مركز المساعدة',
+                        onTap: () {
+                          Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => const FaqScreen(),
                             ),
                           );
                         },
